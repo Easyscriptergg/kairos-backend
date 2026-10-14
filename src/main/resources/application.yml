@@ -1,0 +1,68 @@
+# Kairos backend configuration. Every secret and environment-specific value
+# comes from an environment variable; see .env.example.
+
+server:
+  port: ${PORT:8080}
+  address: 0.0.0.0
+  shutdown: graceful
+  forward-headers-strategy: framework
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: kairos-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:kairos}}
+    username: ${DB_USER:kairos}
+    password: ${DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: ${DB_POOL_SIZE:5}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate   # the schema is owned by Flyway
+    properties:
+      hibernate:
+        default_batch_fetch_size: 100   # loads a list's exercises, sets and meals in a few queries
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+  jackson:
+    default-property-inclusion: non_null   # optional fields are omitted, never sent as null
+    serialization:
+      write-dates-as-timestamps: false
+  mvc:
+    problemdetails:
+      enabled: true
+
+kairos:
+  # HS256 signing key for access tokens: at least 32 bytes. Required; the app refuses to start without it.
+  jwt-secret: ${KAIROS_JWT_SECRET:}
+  token-ttl: ${KAIROS_TOKEN_TTL:PT12H}
+  # Comma-separated browser origins allowed to call the API, e.g. https://kairos.vercel.app
+  cors-origins: ${KAIROS_CORS_ORIGINS:http://localhost:5173}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+      probes:
+        enabled: true
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+logging:
+  level:
+    root: ${LOG_LEVEL:INFO}
